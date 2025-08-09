@@ -1,0 +1,24 @@
+{
+    "name": "RoECS",
+    "tree": {
+        "$className": "DataModel",
+        "ReplicatedStorage": {
+            "RoECS": {
+                "$path": "src"
+            },
+            "SharedTests": {
+                "$path": "dev/shared"
+            }
+        },
+        "ServerScriptService": {
+            "ServerTests": {
+                "$path": "dev/server"
+            }
+        },
+        "ReplicatedFirst": {
+            "ClientTests": {
+                "$path": "dev/client"
+            }
+        }
+    }
+}

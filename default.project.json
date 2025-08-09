@@ -1,0 +1,11 @@
+{
+  "name": "RoECS",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "RoECS": {
+        "$path": "src"
+      }
+    }
+  }
+}
