@@ -24,7 +24,6 @@ export type World = {
     entities_masks: { [number]: buffer },
 
     component_defaults: { [number]: any },
-    is_component_tables : { [number]: boolean },
 
     queries: { Query<...any> },
     query_masks: { buffer },
@@ -40,7 +39,8 @@ export type World = {
     despawn: (World, number) -> (),
 
     attach: <T>(World, number, component: { T }, default: T?) -> World,
-
+    detach: <T>(World, number, component: { T }) -> World,
+    
     component: <T>(World, T) -> { T },
     query: <T...>(World, T...) -> Query<T...>,
 }

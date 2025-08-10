@@ -12,7 +12,7 @@ type Archetype = types.Archetype
 
 local Archetype = {}
 
--- Creates a new archetype and adds it to the world
+
 function Archetype.new(world: World, archetype_mask_array: buffer, mask_hash: string): Archetype
     local cache = {}
     local cache_index_to_component_id = {}
@@ -90,20 +90,53 @@ function Archetype.add_entity(world: World, archetype: Archetype, entity_id: num
     local cache_index_to_component_id = archetype.cache_index_to_component_id
 
     local defaults = given_defaults or defaults_temp
-    local is_component_tables = world.is_component_tables
 
     for index = 1, #cache do
         local component_cache = cache[index]
         local component_id = cache_index_to_component_id[index]
         local default = defaults[component_id] or world.component_defaults[component_id]
-        if is_component_tables[component_id] then
-            default = table.clone(default)
+        if typeof(default) == "table" then
+            default = utils.recursive_clone(default)
+        elseif typeof(default) == "Instance" then
+            local parent = default.Parent
+            default = default:Clone()
+            default.Parent = parent
         end
         component_cache[cache_position] = default
     end
 
     archetype.entity_id_to_cache_position[entity_id] = cache_position
     archetype.cache_position_to_entity_id[cache_position] = entity_id
+end
+
+function Archetype.remove_entity(archetype: Archetype, entity_id: number)
+    local entity_id_to_cache_position = archetype.entity_id_to_cache_position
+    local cache_position_to_entity_id = archetype.cache_position_to_entity_id
+    local cache = archetype.cache
+
+    local cache_position = entity_id_to_cache_position[entity_id]
+    local last_cache_position = archetype.entity_count
+
+    if cache_position == last_cache_position then
+        for index = 1, #cache do
+            local component_cache = cache[index]
+            component_cache[last_cache_position] = nil
+        end
+    else
+        for index = 1, #cache do
+            local component_cache = cache[index]
+            component_cache[cache_position] = component_cache[last_cache_position]
+            component_cache[last_cache_position] = nil
+        end
+        local last_entity_id = cache_position_to_entity_id[last_cache_position]
+        cache_position_to_entity_id[cache_position] = last_entity_id
+        entity_id_to_cache_position[last_entity_id] = cache_position
+    end  
+
+    entity_id_to_cache_position[entity_id] = nil
+    cache_position_to_entity_id[last_cache_position] = nil
+    
+    archetype.entity_count -= 1
 end
 
 function Archetype.transition_entity(world: World, entity_id: number, old_archetype: Archetype, new_archetype: Archetype, given_defaults: { [number]: any }?)
@@ -123,7 +156,6 @@ function Archetype.transition_entity(world: World, entity_id: number, old_archet
 
     -- use pre-allocated empty-table if given defaults is nil
     local defaults = given_defaults or defaults_temp
-    local is_component_tables = world.is_component_tables
 
     -- for every data in the new archetype if there is the same component in the old archetype, copy the data else copy from default
     for i = 1, #new_cache do
@@ -145,8 +177,12 @@ function Archetype.transition_entity(world: World, entity_id: number, old_archet
             old_component_cache[last_cache_position] = nil
         else
             local default = defaults[component_id] or world_component_defaults[component_id]
-            if is_component_tables[component_id] then
-                default = table.clone(default)
+            if type(default) == "table" then
+                default = utils.recursive_clone(default)
+            elseif typeof(default) == "Instance" then
+                local parent = default.Parent
+                default = default:Clone()
+                default.Parent = parent
             end
             new_component_cache[new_cache_position] = default
         end

@@ -41,9 +41,61 @@ function Entity.spawn(world: World, ...): number
     return entity_id
 end
 
--- TODO : fully implement entity despawning
+
 function Entity.despawn(world: World, id: number)
+    local hashes = world.entities_hash
+
+    local hash = hashes[id]
+
+    local archetype_index = world.archetype_hash_to_index[hash]
+    local archetype = world.archetypes[archetype_index]
+    Archetype.remove_entity(archetype, id)
+
+    hashes[id] = nil
+    world.entities_masks[id] = nil
+
     table.insert(world.free_entity_ids, id)
+end
+
+function Entity.detach<T>(world: World, entity_id: number, component_id: { T }): World
+    assert(typeof(component_id) == "number", `${utils.error_prefix} componentId must be a number`)
+
+    local old_mask_array = world.entities_masks[entity_id]
+    local new_mask_array = buffer.create(utils.buffer_size)
+    buffer.copy(new_mask_array, 0, old_mask_array)
+    
+
+    local chunk = component_id // 32
+    local bit_index = component_id % 32
+    local mask = buffer.readu32(new_mask_array, chunk)
+
+    if bit32.extract(mask, bit_index) == 0 then
+        return world
+    end
+
+    mask = bit32.replace(mask, 0, bit_index)
+    buffer.writeu32(new_mask_array, chunk, mask)
+
+    local old_hash = world.entities_hash[entity_id]
+    local new_hash = buffer.tostring(new_mask_array)
+
+    local archetype_hash_to_index = world.archetype_hash_to_index
+    local new_index = archetype_hash_to_index[new_hash]
+    local old_index = archetype_hash_to_index[old_hash]
+    
+    local old_archetype = world.archetypes[old_index]
+    local new_archetype = world.archetypes[new_index] or Archetype.new(world, new_mask_array, new_hash)
+
+    if old_archetype then
+        Archetype.transition_entity(world, entity_id, old_archetype, new_archetype)
+    else
+        Archetype.add_entity(world, new_archetype, entity_id)
+    end
+
+    world.entities_masks[entity_id] = new_mask_array
+    world.entities_hash[entity_id] = new_hash    
+
+    return world
 end
 
 -- Attach the given component to the entity and move it to the new archetype
@@ -60,6 +112,11 @@ function Entity.attach<T>(world: World, entity_id: number, component_id: { T }, 
     local chunk = component_id // 32
     local bit_index = component_id % 32
     local mask = buffer.readu32(new_mask_array, chunk)
+
+    if bit32.extract(mask, bit_index) == 1 then
+        return world
+    end
+    
     mask = bit32.replace(mask, 1, bit_index)
     buffer.writeu32(new_mask_array, chunk, mask)
 

@@ -34,6 +34,7 @@ function lib.world(name: string?, is_default: boolean?): types.World
     return new_world
 end
 
+lib.utils = utils
 
 
 return lib

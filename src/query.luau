@@ -27,6 +27,8 @@ function Query.new<A...>(world: World, ...: A...): Query<A...>
 
     local archetype_masks = world.archetype_masks
 
+    local component_count = #components
+    
     for i = 1, #archetype_masks do
         local archetype_mask_array = archetype_masks[i]
         local archetype = world.archetypes[i]
@@ -45,7 +47,7 @@ function Query.new<A...>(world: World, ...: A...): Query<A...>
         local view = {}
         local cache = archetype.cache
         local component_id_to_cache_index = archetype.component_id_to_cache_index
-        for n = 1, #components do
+        for n = 1, component_count do
             local component = components[n]
             local cache_index = component_id_to_cache_index[component]
             table.insert(view, cache[cache_index])
@@ -56,7 +58,14 @@ function Query.new<A...>(world: World, ...: A...): Query<A...>
     local function view_all(callback: (number, ...any) -> ())
         for i = 1, #views do
             local view = views[i]
-            callback(#view[1], table.unpack(view))
+            local first = view[1]
+            local count: number
+            if first then
+                count = #first
+            else
+                count = 0
+            end
+            callback(count, table.unpack(view))
         end
     end
 

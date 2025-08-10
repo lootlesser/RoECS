@@ -24,14 +24,15 @@ function World.new(): WorldInterface
         query_hash_to_index = {},
         query_components = {},
         query_views = {},
-        
+
         entities_hash = {},
         entities_masks = {},
+
         component_defaults = {},
 
         entity_id_counter = 0,
         free_entity_ids = {},
-        is_component_tables = {},
+        
         component_id_counter = 0,
 
         component = Component.new,
@@ -39,6 +40,7 @@ function World.new(): WorldInterface
         spawn = Entity.spawn,
         despawn = Entity.despawn,
         attach = Entity.attach,
+        detach = Entity.detach
     }
 
     return (world:: any):: WorldInterface

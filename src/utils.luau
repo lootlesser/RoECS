@@ -21,6 +21,20 @@ function utils.add_components_to_mask(components: { number }, old_mask_array: bu
     return new_mask_array
 end
 
+function utils.recursive_clone(tbl: {}): {}
+    local clone = {}
+    for k, v in pairs(tbl) do
+        if typeof(v) == "table" then
+            clone[k] = utils.recursive_clone(v)
+        elseif typeof(v) == "Instance" then
+            clone[k] = v:Clone()
+        else
+            clone[k] = v
+        end
+    end
+    return clone
+end
+
 
 function utils.pack(...): {}
     return {...}
