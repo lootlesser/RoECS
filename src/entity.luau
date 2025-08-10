@@ -49,7 +49,7 @@ function Entity.despawn(world: World, id: number)
 
     local archetype_index = world.archetype_hash_to_index[hash]
     local archetype = world.archetypes[archetype_index]
-    Archetype.remove_entity(archetype, id)
+    Archetype.remove_entity(world, archetype, id)
 
     hashes[id] = nil
     world.entities_masks[id] = nil
@@ -61,6 +61,11 @@ function Entity.detach<T>(world: World, entity_id: number, component_id: { T }):
     assert(typeof(component_id) == "number", `${utils.error_prefix} componentId must be a number`)
 
     local old_mask_array = world.entities_masks[entity_id]
+
+    if not old_mask_array then
+        return world
+    end
+
     local new_mask_array = buffer.create(utils.buffer_size)
     buffer.copy(new_mask_array, 0, old_mask_array)
     
@@ -106,6 +111,11 @@ function Entity.attach<T>(world: World, entity_id: number, component_id: { T }, 
     assert(world_default, `${utils.error_prefix} componentId ${component_id} does not exist`)
     
     local old_mask_array = world.entities_masks[entity_id]
+
+    if not old_mask_array then
+        error(`${utils.error_prefix} entity ${entity_id} does not exist`)
+    end
+
     local new_mask_array = buffer.create(utils.buffer_size)
     buffer.copy(new_mask_array, 0, old_mask_array)
 

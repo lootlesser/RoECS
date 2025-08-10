@@ -112,7 +112,7 @@ local function runTests()
 
         local oldMask = world.entities_masks[e]
         local oldArchetypeCount = countArchetypes(world)
-
+        
         world:attach(e, cPart, Instance.new("Part"))
 
         local newMask = world.entities_masks[e]
@@ -130,8 +130,8 @@ local function runTests()
         assertTrue(oldArchetype.entity_count == 0, "Old archetype should have 0 entities after transition")
 
         -- Confirm cache position mappings
-        local cachePos = newArchetype.entity_id_to_cache_position[e]
-        assertTrue(cachePos ~= nil, "Entity cache position should be set in new archetype")
+        local cachePos = world.entity_id_to_cache_position[e]
+        assertTrue(cachePos ~= nil, "Entity cache position should be set")
 
         print("Test 4 Passed: Attach component with archetype transition checks")
     end
@@ -160,8 +160,8 @@ local function runTests()
         assertTrue(newArchetype.entity_count == 1, "New archetype should have 1 entity")
         assertTrue(oldArchetype.entity_count == 0, "Old archetype should have 0 entities after transition")
 
-        local cachePos = newArchetype.entity_id_to_cache_position[e]
-        assertTrue(cachePos ~= nil, "Entity cache position should be set in new archetype")
+        local cachePos = world.entity_id_to_cache_position[e]
+        assertTrue(cachePos ~= nil, "Entity cache position should be set")
 
         print("Test 5 Passed: Detach component with archetype transition checks")
     end
@@ -293,7 +293,7 @@ do
     local success, err = pcall(function()
         world:attach(e, cPart, Instance.new("Part"))
     end)
-    assertTrue(not success, "Attaching to despawned entity should fail or error")
+    assertTrue(not success, "Attaching to despawned entity should fail or error, error=")
     print("Test 13 Passed: Attach to despawned entity is prevented")
 end
 
@@ -305,14 +305,14 @@ do
     local archetype, _ = getArchetypeByMask(world, world.entities_masks[e])
     local cacheIndex = archetype.component_id_to_cache_index[cPart]
     local partCache = archetype.cache[cacheIndex]
-    local instance1 = partCache[archetype.entity_id_to_cache_position[e]]
+    local instance1 = partCache[world.entity_id_to_cache_position[e]]
     instance1.Name = "ModifiedPart"
 
     local e2 = world:spawn(cVelocity)
     world:attach(e2, cPart, Instance.new("Part"))
     local archetype2, _ = getArchetypeByMask(world, world.entities_masks[e2])
     local partCache2 = archetype2.cache[cacheIndex]
-    local instance2 = partCache2[archetype2.entity_id_to_cache_position[e2]]
+    local instance2 = partCache2[world.entity_id_to_cache_position[e2]]
 
     assertTrue(instance2.Name ~= "ModifiedPart", "Attached component instances should be unique clones")
     print("Test 14 Passed: Attach component clones defaults independently")
@@ -409,17 +409,13 @@ do
 
     for i = 1, 5 do
         world:attach(e, cPart, Instance.new("Part"))
-        local archetype = getArchetypeByMask(world, world.entities_masks[e])
-        positions[#positions+1] = archetype.entity_id_to_cache_position[e]
+        positions[#positions+1] = world.entity_id_to_cache_position[e]
         world:attach(e, cGravity, {0})
-        local archetype2 = getArchetypeByMask(world, world.entities_masks[e])
-        positions[#positions+1] = archetype2.entity_id_to_cache_position[e]
+        positions[#positions+1] = world.entity_id_to_cache_position[e]
         world:detach(e, cPart)
-        local archetype3 = getArchetypeByMask(world, world.entities_masks[e])
-        positions[#positions+1] = archetype3.entity_id_to_cache_position[e]
+        positions[#positions+1] = world.entity_id_to_cache_position[e]
         world:detach(e, cGravity)
-        local archetype4 = getArchetypeByMask(world, world.entities_masks[e])
-        positions[#positions+1] = archetype4.entity_id_to_cache_position[e]
+        positions[#positions+1] = world.entity_id_to_cache_position[e]
     end
 
     for i = 1, #positions do
@@ -508,9 +504,9 @@ do
     local e2 = world:spawn(cCustom)
     local a1 = getArchetypeByMask(world, world.entities_masks[e1])
     local cacheIndex = a1.component_id_to_cache_index[cCustom]
-    local c1 = a1.cache[cacheIndex][a1.entity_id_to_cache_position[e1]]
+    local c1 = a1.cache[cacheIndex][world.entity_id_to_cache_position[e1]]
     c1.nested.val = 999
-    local c2 = a1.cache[cacheIndex][a1.entity_id_to_cache_position[e2]]
+    local c2 = a1.cache[cacheIndex][world.entity_id_to_cache_position[e2]]
     assertTrue(c2.nested.val ~= 999, "Table default should be deep cloned")
     print("Test 25 Passed: Component table defaults are deep cloned")
 end

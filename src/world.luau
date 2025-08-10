@@ -27,6 +27,8 @@ function World.new(): WorldInterface
 
         entities_hash = {},
         entities_masks = {},
+        entity_id_to_cache_position = {},
+        cache_position_to_entity_id = {},
 
         component_defaults = {},
 

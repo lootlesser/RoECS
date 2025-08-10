@@ -2,7 +2,6 @@
 --!native
 --!optimize 2
 
--- TODO implement support for entity removal by swapping entities
 
 local types = require(script.Parent.types)
 local utils = require(script.Parent.utils)
@@ -11,7 +10,6 @@ type World = types.World
 type Archetype = types.Archetype
 
 local Archetype = {}
-
 
 function Archetype.new(world: World, archetype_mask_array: buffer, mask_hash: string): Archetype
     local cache = {}
@@ -37,8 +35,6 @@ function Archetype.new(world: World, archetype_mask_array: buffer, mask_hash: st
         cache = cache,
         component_id_to_cache_index = component_id_to_cache_index,
         cache_index_to_component_id = cache_index_to_component_id,
-        entity_id_to_cache_position = {},
-        cache_position_to_entity_id = {},
         entity_count = 0,
     }
 
@@ -105,13 +101,13 @@ function Archetype.add_entity(world: World, archetype: Archetype, entity_id: num
         component_cache[cache_position] = default
     end
 
-    archetype.entity_id_to_cache_position[entity_id] = cache_position
-    archetype.cache_position_to_entity_id[cache_position] = entity_id
+    world.entity_id_to_cache_position[entity_id] = cache_position
+    world.cache_position_to_entity_id[cache_position] = entity_id
 end
 
-function Archetype.remove_entity(archetype: Archetype, entity_id: number)
-    local entity_id_to_cache_position = archetype.entity_id_to_cache_position
-    local cache_position_to_entity_id = archetype.cache_position_to_entity_id
+function Archetype.remove_entity(world: World, archetype: Archetype, entity_id: number)
+    local entity_id_to_cache_position = world.entity_id_to_cache_position
+    local cache_position_to_entity_id = world.cache_position_to_entity_id
     local cache = archetype.cache
 
     local cache_position = entity_id_to_cache_position[entity_id]
@@ -145,7 +141,9 @@ function Archetype.transition_entity(world: World, entity_id: number, old_archet
     local old_cache = old_archetype.cache
     local new_cache = new_archetype.cache
 
-    local old_cache_position = old_archetype.entity_id_to_cache_position[entity_id]
+    local entity_id_to_cache_position = world.entity_id_to_cache_position
+    local old_cache_position = entity_id_to_cache_position[entity_id]
+    
     local last_cache_position = old_archetype.entity_count
 
     local new_cache_index_to_component_id = new_archetype.cache_index_to_component_id
@@ -189,23 +187,19 @@ function Archetype.transition_entity(world: World, entity_id: number, old_archet
     end
 
     -- Swap the last pointers for the removed entity pointers and remove the last pointer from the old archetype
-    local old_cache_position_to_entity_id = old_archetype.cache_position_to_entity_id
-    local old_entity_id_to_cache_position = old_archetype.entity_id_to_cache_position
+    local cache_position_to_entity_id = world.cache_position_to_entity_id
 
-    local last_entity_id = old_cache_position_to_entity_id[last_cache_position]
-
-    old_cache_position_to_entity_id[last_cache_position] = nil
-    old_entity_id_to_cache_position[entity_id] = nil
+    local last_entity_id = cache_position_to_entity_id[last_cache_position]
 
     if last_cache_position ~= old_cache_position then
-        old_entity_id_to_cache_position[last_entity_id] = old_cache_position
-        old_cache_position_to_entity_id[old_cache_position] = last_entity_id
+        entity_id_to_cache_position[last_entity_id] = old_cache_position
+        cache_position_to_entity_id[old_cache_position] = last_entity_id
     end
 
     old_archetype.entity_count -= 1
 
-    new_archetype.cache_position_to_entity_id[new_cache_position] = entity_id
-    new_archetype.entity_id_to_cache_position[entity_id] = new_cache_position
+    cache_position_to_entity_id[new_cache_position] = entity_id
+    entity_id_to_cache_position[entity_id] = new_cache_position
 end
 
 

@@ -5,8 +5,6 @@ export type Archetype = {
     cache: { { any } },
     cache_index_to_component_id: { [number]: number },
     component_id_to_cache_index: { [number]: number },
-    entity_id_to_cache_position: { [number]: number },
-    cache_position_to_entity_id: { [number]: number },
 }
 
 export type Query<A...> = {
@@ -24,6 +22,7 @@ export type World = {
     entities_masks: { [number]: buffer },
 
     component_defaults: { [number]: any },
+    component_id_counter: number,
 
     queries: { Query<...any> },
     query_masks: { buffer },
@@ -33,7 +32,8 @@ export type World = {
 
     entity_id_counter: number,
     free_entity_ids: { [number]: number },
-    component_id_counter: number,
+    entity_id_to_cache_position: { [number]: number },
+    cache_position_to_entity_id: { [number]: number },
 
     spawn: (World, ...any) -> number,
     despawn: (World, number) -> (),
